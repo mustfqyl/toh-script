@@ -2,6 +2,9 @@
 --   GODMODE GUI - Dark Theme
 -- ================================================
 
+if getgenv().TDI_LOADED then
+    return
+end
 getgenv().TDI_LOADED = true
 
 local plr        = game.Players.LocalPlayer
@@ -20,10 +23,12 @@ local function startGod(char)
     stopGod()
     local hum = char:WaitForChild("Humanoid")
     hum.Health = hum.MaxHealth
+    local threshold = math.random(70, 90) / 100
     godConn = RunService.Heartbeat:Connect(function()
         if hum and hum.Parent then
-            if hum.Health < hum.MaxHealth then
+            if hum.Health < hum.MaxHealth * threshold then
                 hum.Health = hum.MaxHealth
+                threshold = math.random(70, 90) / 100
             end
         else stopGod() end
     end)
@@ -34,10 +39,8 @@ if plr.Character then startGod(plr.Character) end
 plr.CharacterAdded:Connect(function(char)
     task.wait(0.5)
     if godEnabled then startGod(char) end
-    warn('[GodmodeGUI] Auto-reloaded.')
 end)
 
-warn('[GodmodeGUI] Ready.')
 
 -- ── GUI ───────────────────────────────────────────
 local ScreenGui = Instance.new("ScreenGui")
@@ -152,7 +155,7 @@ Lbl.TextXAlignment         = Enum.TextXAlignment.Left
 Lbl.ZIndex                 = 4
 
 local DescLbl = Instance.new("TextLabel", Row)
-DescLbl.Text                   = "Health locked at max."
+DescLbl.Text                   = "Refills HP at random threshold."
 DescLbl.Font                   = Enum.Font.Gotham
 DescLbl.TextSize               = 9
 DescLbl.TextColor3             = Color3.fromRGB(100, 130, 160)
@@ -208,10 +211,8 @@ Row.MouseButton1Click:Connect(function()
     godEnabled = state
     if state then
         if plr.Character then startGod(plr.Character) end
-        warn('[GodmodeGUI] HP Lock ON')
     else
         stopGod()
-        warn('[GodmodeGUI] HP Lock OFF')
     end
 end)
 Row.MouseEnter:Connect(function()
@@ -236,24 +237,11 @@ Hint.TextXAlignment         = Enum.TextXAlignment.Center
 Hint.ZIndex                 = 3
 
 -- ── Button Logic ──────────────────────────────────
-CloseBtn.MouseButton1Click:Connect(function()
-    stopGod()
-    ScreenGui:Destroy()
-end)
-CloseBtn.MouseEnter:Connect(function() CloseBtn.BackgroundColor3 = Color3.fromRGB(70,10,10) end)
-CloseBtn.MouseLeave:Connect(function() CloseBtn.BackgroundColor3 = Color3.fromRGB(35,10,10) end)
-
-local guiVisible = true
-MinBtn.MouseButton1Click:Connect(function()
-    guiVisible = false
-    MainFrame.Visible = false
-end)
-MinBtn.MouseEnter:Connect(function() MinBtn.BackgroundColor3 = Color3.fromRGB(28,28,42) end)
-MinBtn.MouseLeave:Connect(function() MinBtn.BackgroundColor3 = Color3.fromRGB(20,20,30) end)
-
--- RightAlt polling toggle
+-- RightAlt polling toggle (stored so we can disconnect on close)
+MainFrame.Visible = false -- başlangıçta gizli
+local guiVisible = false
 local wasDown = false
-RunService.Heartbeat:Connect(function()
+local toggleConn = RunService.Heartbeat:Connect(function()
     local ok, isDown = pcall(function()
         return UIS:IsKeyDown(Enum.KeyCode.RightAlt)
     end)
@@ -264,3 +252,22 @@ RunService.Heartbeat:Connect(function()
     end
     wasDown = isDown
 end)
+
+-- Close: everything dies
+local function fullStop()
+    stopGod()
+    if toggleConn then toggleConn:Disconnect(); toggleConn = nil end
+    getgenv().TDI_LOADED = nil -- inject korumasını sıfırla
+    ScreenGui:Destroy()
+end
+
+CloseBtn.MouseButton1Click:Connect(fullStop)
+CloseBtn.MouseEnter:Connect(function() CloseBtn.BackgroundColor3 = Color3.fromRGB(70,10,10) end)
+CloseBtn.MouseLeave:Connect(function() CloseBtn.BackgroundColor3 = Color3.fromRGB(35,10,10) end)
+
+MinBtn.MouseButton1Click:Connect(function()
+    guiVisible = false
+    MainFrame.Visible = false
+end)
+MinBtn.MouseEnter:Connect(function() MinBtn.BackgroundColor3 = Color3.fromRGB(28,28,42) end)
+MinBtn.MouseLeave:Connect(function() MinBtn.BackgroundColor3 = Color3.fromRGB(20,20,30) end)
