@@ -23,12 +23,12 @@ local function startGod(char)
     stopGod()
     local hum = char:WaitForChild("Humanoid")
     hum.Health = hum.MaxHealth
-    local threshold = math.random(70, 90) / 100
+    local threshold = math.random(85, 90) / 100
     godConn = RunService.Heartbeat:Connect(function()
         if hum and hum.Parent then
             if hum.Health < hum.MaxHealth * threshold then
                 hum.Health = hum.MaxHealth
-                threshold = math.random(70, 90) / 100
+                threshold = math.random(85, 90) / 100
             end
         else stopGod() end
     end)
